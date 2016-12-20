@@ -31,9 +31,15 @@ class NestedDict(dict):
         a finite depth specified at the time of construction
 
         >>> # Nested dictionary of depth 4
-        >>> d = defautldict(lambda: defaultdict(lambda: defaultdict(dict)))
+        >>> d = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
 
-        NestedDict is able to handle nested dictinoaries of arbitrary depth.
+        NestedDict is able to handle nested dictinoaries of arbitrary depth. Additionally,
+        since NestedDict extends `dict`, it prints nicely to the console by default
+
+        >>> my_default_dict
+        defaultdict(<function <lambda> at 0x10077f840>, {1: defaultdict(<function <lambda>.<locals>.<lambda> at 0x10185a400>, {2: 3})})
+        >>> my_nested_dict
+        {1: {2: 3}}
     """
     @staticmethod
     def _split_key(key):
@@ -57,3 +63,9 @@ class NestedDict(dict):
             self[cur_key][downstream] = value
         else:
             super(NestedDict, self).__setitem__(cur_key, value)
+
+    def get(self, key, default=None):
+        try:
+            return self.__getitem__(key)
+        except (KeyError, TypeError):
+            return default
