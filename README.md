@@ -17,7 +17,9 @@ else:
 NestedDict enables the following syntax
 
 ```python
-nested_dictionary['a', 'b', 'c'] = 3
+from nesteddict import NestedDict
+d = NestedDict()
+d['a', 'b', 'c'] = 3
 ```
 
 A defaultdict coult be used to accomplish a similar goal, but only to
@@ -37,6 +39,9 @@ defaultdict(<function <lambda> at 0x10077f840>, {1: defaultdict(<function <lambd
 >>> my_nested_dict
 {1: {2: 3}}
 ```
+
+## Install
+Clone this repository and run `python setup.py develop` to install.
 
 ## Uses
 

@@ -1,5 +1,6 @@
 from __future__ import with_statement
-from setuptools import setup
+from distutils.core import setup
+from setuptools import find_packages
 import nesteddict
 
 nesteddict_classifiers = [
@@ -25,5 +26,6 @@ setup(name="nesteddict",
       description="A nested dictionary data structure",
       long_description=long_description,
       license="MIT",
-      classifiers=nesteddict_classifiers
+      classifiers=nesteddict_classifiers,
+      packages=find_packages()
       )
