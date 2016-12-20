@@ -27,6 +27,23 @@ class TestNestedDict:
         d[1, 'a'] = 'hello'
         assert(d == {1: {'a': 'hello'}})
 
+    def test_empty_no_unintentional_set(self):
+        d = NestedDict()
+        item = d.get('a')
+        assert(d == {})
+
+        item = d.get([1, 2, 3])
+        assert(d == {})
+
+    def test_nonempty_no_unintentional_set(self):
+        d = NestedDict()
+        d[1, 2, 3] = 'hello'
+        d[1, 2, 4] = 'goodbye'
+        item = d.get(2)
+        assert(d == {1: {2: {3: 'hello', 4: 'goodbye'}}})
+        item = d.get([1, 2, 5, 6])
+        assert(d == {1: {2: {3: 'hello', 4: 'goodbye'}}})
+
     def test_shallow_setter(self):
         d = NestedDict()
         d[1] = 'a'
@@ -78,4 +95,3 @@ class TestNestedDict:
         e[3] = 'hello'
         d.update(e)
         assert(d == {1: {2: {4: [3, 4]}}, 2: {'k': 16}, 3: 'hello'})
-
