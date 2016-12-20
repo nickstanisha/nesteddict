@@ -8,9 +8,11 @@ class TestNestedDict:
         d = NestedDict()
         assert(isinstance(d, dict))
 
+    def test_kwargs_init(self):
         d = NestedDict(a=[2, 3, 4], b=24, c='hello')
         assert(d == {'a': [2, 3, 4], 'b': 24, 'c': 'hello'})
 
+    def test_iter_init(self):
         d = NestedDict([(1, 2), (3, 4), ('hello', 'goodbye')])
         assert(d == {1: 2, 3: 4, 'hello': 'goodbye'})
 
@@ -25,6 +27,8 @@ class TestNestedDict:
         d[1, 'a'] = 'hello'
         assert(d == {1: {'a': 'hello'}})
 
+    def test_shallow_setter(self):
+        d = NestedDict()
         d[1] = 'a'
         assert(d == {1: 'a'})
 
@@ -36,12 +40,17 @@ class TestNestedDict:
         assert(d['a', 'b', 'c'] == 'hello')
         assert(d['a', 'b'] == {'c': 'hello', 'd': 'goodbye'})
 
-    def test_get(self):
+    def test_shallow_get(self):
         d = NestedDict()
         d[1, 2, 3] = 4
 
         assert(d.get(1) == {2: {3: 4}})
         assert(d.get(2) is None)
+        assert(d.get(2, 'arbitrary') == 'arbitrary')
+
+    def test_nested_get(self):
+        d = NestedDict()
+        d[1, 2, 3] = 4
         assert(d.get([1, 3]) is None)
         assert(d.get([1, 3], 'arbitrary') == 'arbitrary')
         assert(d.get([1, 2, 3]) == 4)
