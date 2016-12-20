@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/nickstanisha/nesteddict.svg?branch=develop)](https://travis-ci.org/nickstanisha/nesteddict)
+[![Build Status](https://travis-ci.org/nickstanisha/nesteddict.svg?branch=master)](https://travis-ci.org/nickstanisha/nesteddict)
 
 # nesteddict
 A nested dictionary data structure for Python.
