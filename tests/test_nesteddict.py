@@ -22,6 +22,16 @@ class TestNestedDict:
         assert(isinstance(d, NestedDict))
         assert(all(isinstance(d[i], NestedDict) for i in [(1,), (1, 2), (1, 2, 3), (1, 2, 3, 4)]))
 
+    def test_dict_init_tuples(self):
+        d = NestedDict({(1, 2, 3): 4, (5, 6, 7): 8})
+        assert(d[(1, 2, 3), ] == 4)
+        assert(d.get((1, 2, 3)) == 4)
+        with pytest.raises(KeyError, message="Expecting KeyError"):
+            i = d[(1, 2, 3)]
+
+        d = NestedDict({(1, 2, 3): {(4, 3, 2): 1, 'hello': 'goodbye'}, 'a': {('a', 'b', 'c'): 2}})
+        assert(d == {(1, 2, 3): {(4, 3, 2): 1, 'hello': 'goodbye'}, 'a': {('a', 'b', 'c'): 2}})
+
     def test_setter(self):
         d = NestedDict()
         d[1, 'a', 34] = [1, 2]
@@ -119,3 +129,74 @@ class TestNestedDict:
 
     def test_set(self):
         d = NestedDict()
+        d.set((1, 2, 3), 4)
+
+        assert(d[(1, 2, 3), ] == 4)
+        assert(d.get((1, 2, 3)) == 4)
+
+        with pytest.raises(KeyError, message="Unintentional assignment in `set`"):
+            item = d[1, 2, 3]
+
+    def test_delete(self):
+        d = NestedDict({(1, 2, 3): 4, 1: {2: {3: 4}}})
+        d.delete((1, 2, 3))
+        assert(d == {1: {2: {3: 4}}})
+
+    def test_leaf_values(self):
+        d = NestedDict()
+        d[1] = 4
+        d[2] = (3, 2, 1)
+        d[4] = 'hello'
+        assert (set(d.leaf_values()) == {4, (3, 2, 1), 'hello'})
+
+    def test_leaf_values_nested(self):
+        d = NestedDict()
+        d[1, 2, 3, 4] = 5
+        d[1, 2, 3, 5] = 'hello'
+        d[2, (3, 2, 1)] = (1, 2, 3)
+        d[2, 4] = 16
+        assert (set(d.leaf_values()) == {5, 'hello', (1, 2, 3), 16})
+
+    def test_nested_keys(self):
+        d = NestedDict()
+        d[1] = 4
+        d['hello'] = (3, 2, 1)
+        d[(1, 2, 3), ] = 'hello'
+        assert (set(d.nested_keys()) == {(1,), ('hello',), ((1, 2, 3),)})
+
+        d = NestedDict()
+        d[1, 2, 3, 4] = 5
+        d[1, 2, 3, 5] = 'hello'
+        d[2, (3, 2, 1)] = (1, 2, 3)
+        d[2, 4] = 16
+        assert (set(d.nested_keys()) == {(1, 2, 3, 4), (1, 2, 3, 5), (2, (3, 2, 1)), (2, 4)})
+
+    def test_nested_update(self):
+        d = NestedDict({1: {2: {3: {4: 5, 5: 6}}}, 2: {3: 5, 4: 16}})
+        e = {1: {2: {3: {5: 7}}}, 2: {5: 1}}
+        d.nested_update(e)
+        assert(d == {1: {2: {3: {4: 5, 5: 7}}}, 2: {3: 5, 4: 16, 5: 1}})
+
+        d = NestedDict({1: {2: {3: {4: 5, 5: 6}}}, 2: {3: 5, 4: 16}})
+        e = NestedDict({1: {2: {3: {5: 7}}}, 2: {5: 1}})
+        d.nested_update(e)
+        assert(d == {1: {2: {3: {4: 5, 5: 7}}}, 2: {3: 5, 4: 16, 5: 1}})
+
+    def test_nested_update_complex_keys(self):
+        d = NestedDict({(1, 2, 3): {(4, 3, 2): 1, 'hello': 'goodbye'}, 'a': {('a', 'b', 'c'): 2}})
+        e = {1: 2, (1, 2, 3): 4, 'hello': {'good': 'bye', 'bon': 'voyage'}}
+        d.nested_update(e)
+
+        assert(d == {1: 2, (1, 2, 3): 4, 'hello': {'good': 'bye', 'bon': 'voyage'}, 'a': {('a', 'b', 'c'): 2}})
+
+    def test_del(self):
+        d = NestedDict({(1, 2, 3): {(4, 3, 2): 1, 'hello': 'goodbye'}, 'a': {('a', 'b', 'c'): 2}})
+        del d[(1, 2, 3), 'hello']
+        assert(d == {(1, 2, 3): {(4, 3, 2): 1}, 'a': {('a', 'b', 'c'): 2}})
+
+        del d['a']
+        assert(d == {(1, 2, 3): {(4, 3, 2): 1}})
+
+        with pytest.raises(KeyError, message="Expected KeyError"):
+            del d[1, 2, 3]
+            assert (d == {(1, 2, 3): {(4, 3, 2): 1}})

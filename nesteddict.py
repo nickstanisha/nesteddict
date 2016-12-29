@@ -127,9 +127,9 @@ class NestedDict(dict):
     def __setitem__(self, key, value):
         cur_key, downstream = self._split_key(key)
         if downstream:
-            if cur_key not in self or not isinstance(self[cur_key], NestedDict):
+            if cur_key not in self or not isinstance(super(NestedDict, self).__getitem__(cur_key), NestedDict):
                 super(NestedDict, self).__setitem__(cur_key, NestedDict())
-            self[cur_key][downstream] = value
+            super(NestedDict, self).__getitem__(cur_key)[downstream] = value
         else:
             if isinstance(value, dict) and not isinstance(value, NestedDict):
                 super(NestedDict, self).__setitem__(cur_key, NestedDict(value))
