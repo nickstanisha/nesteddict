@@ -144,6 +144,13 @@ class NestedDict(dict):
         else:
             super(NestedDict, self).__delitem__(key)
 
+    def get_nested(self, key, default=None):
+        """ Get a path from a `NestedDict` (analogous to `dict.get` except keys get analyzed as paths """
+        try:
+            return self[key]
+        except (KeyError, TypeError):
+            return default
+
     def get(self, key, default=None):
         """ A short-circuit to `dict.get`, will not parse tuples into a path before applying changes
 
@@ -201,3 +208,20 @@ class NestedDict(dict):
                 A list of tuples representing paths retrieved in depth-first order from the NestedDict
         """
         return [path for val, path in _dfs_generator(self)]
+
+    def nested_update(self, obj):
+        """ Works like `dict.update` except only the leaf values of the supplied dictionary are
+            used to update `self`
+
+            Examples
+            --------
+            >>> print(d)
+            {1: {2: {3: {4: 5, 5: 6}}}, 2: {3: 5, 4: 16}}
+            >>> print(e)
+            {1: {2: {3: {5: 7}}}, 2: {5: 1}}
+            >>> d.nested_update(e)
+            >>> print(d)
+            {1: {2: {3: {4: 5, 5: 7}}}, 2: {3: 5, 4: 16, 5: 1}}
+        """
+        for val, path in _dfs_generator(obj):
+            self[path] = val

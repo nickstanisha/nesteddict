@@ -16,6 +16,12 @@ class TestNestedDict:
         d = NestedDict([(1, 2), (3, 4), ('hello', 'goodbye')])
         assert(d == {1: 2, 3: 4, 'hello': 'goodbye'})
 
+    def test_dict_init(self):
+        d = NestedDict({1: {2: {3: {4: {5: 6}}}}})
+        assert(d[1, 2, 3, 4, 5] == 6)
+        assert(isinstance(d, NestedDict))
+        assert(all(isinstance(d[i], NestedDict) for i in [(1,), (1, 2), (1, 2, 3), (1, 2, 3, 4)]))
+
     def test_setter(self):
         d = NestedDict()
         d[1, 'a', 34] = [1, 2]
@@ -35,6 +41,9 @@ class TestNestedDict:
         item = d.get([1, 2, 3])
         assert(d == {})
 
+        item = d.get_nested((1, 2, 3))
+        assert(d == {})
+
     def test_nonempty_no_unintentional_set(self):
         d = NestedDict()
         d[1, 2, 3] = 'hello'
@@ -42,6 +51,8 @@ class TestNestedDict:
         item = d.get(2)
         assert(d == {1: {2: {3: 'hello', 4: 'goodbye'}}})
         item = d.get([1, 2, 5, 6])
+        assert(d == {1: {2: {3: 'hello', 4: 'goodbye'}}})
+        item = d.get_nested((1, 2, 5))
         assert(d == {1: {2: {3: 'hello', 4: 'goodbye'}}})
 
     def test_shallow_setter(self):
@@ -60,17 +71,27 @@ class TestNestedDict:
     def test_shallow_get(self):
         d = NestedDict()
         d[1, 2, 3] = 4
+        d[(1, 2, 3),] = 5
 
         assert(d.get(1) == {2: {3: 4}})
         assert(d.get(2) is None)
         assert(d.get(2, 'arbitrary') == 'arbitrary')
 
+    def test_shallow_get_tuples(self):
+        d = NestedDict()
+        d[1, 2, 3] = 4
+        d[(1, 2, 3),] = 5
+
+        assert(d.get((1, 2, 3)) == 5)
+        assert(d.get(1) == {2: {3: 4}})
+        assert(d.get((1, 2, 4), 'arbitrary') == 'arbitrary')
+
     def test_nested_get(self):
         d = NestedDict()
         d[1, 2, 3] = 4
-        assert(d.get([1, 3]) is None)
-        assert(d.get([1, 3], 'arbitrary') == 'arbitrary')
-        assert(d.get([1, 2, 3]) == 4)
+        assert(d.get_nested([1, 3]) is None)
+        assert(d.get_nested([1, 3], 'arbitrary') == 'arbitrary')
+        assert(d.get_nested([1, 2, 3]) == 4)
 
     def test_get_errors(self):
         d = NestedDict()
@@ -95,3 +116,6 @@ class TestNestedDict:
         e[3] = 'hello'
         d.update(e)
         assert(d == {1: {2: {4: [3, 4]}}, 2: {'k': 16}, 3: 'hello'})
+
+    def test_set(self):
+        d = NestedDict()
