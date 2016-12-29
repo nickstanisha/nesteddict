@@ -147,7 +147,7 @@ class TestNestedDict:
         d[1] = 4
         d[2] = (3, 2, 1)
         d[4] = 'hello'
-        assert (set(d.leaf_values()) == {4, (3, 2, 1), 'hello'})
+        assert (set(d.leaf_values()) == set([4, (3, 2, 1), 'hello']))
 
     def test_leaf_values_nested(self):
         d = NestedDict()
@@ -155,21 +155,21 @@ class TestNestedDict:
         d[1, 2, 3, 5] = 'hello'
         d[2, (3, 2, 1)] = (1, 2, 3)
         d[2, 4] = 16
-        assert (set(d.leaf_values()) == {5, 'hello', (1, 2, 3), 16})
+        assert (set(d.leaf_values()) == set([5, 'hello', (1, 2, 3), 16]))
 
     def test_nested_keys(self):
         d = NestedDict()
         d[1] = 4
         d['hello'] = (3, 2, 1)
         d[(1, 2, 3), ] = 'hello'
-        assert (set(d.nested_keys()) == {(1,), ('hello',), ((1, 2, 3),)})
+        assert (set(d.nested_keys()) == set([(1,), ('hello',), ((1, 2, 3),)]))
 
         d = NestedDict()
         d[1, 2, 3, 4] = 5
         d[1, 2, 3, 5] = 'hello'
         d[2, (3, 2, 1)] = (1, 2, 3)
         d[2, 4] = 16
-        assert (set(d.nested_keys()) == {(1, 2, 3, 4), (1, 2, 3, 5), (2, (3, 2, 1)), (2, 4)})
+        assert (set(d.nested_keys()) == set([(1, 2, 3, 4), (1, 2, 3, 5), (2, (3, 2, 1)), (2, 4)]))
 
     def test_nested_update(self):
         d = NestedDict({1: {2: {3: {4: 5, 5: 6}}}, 2: {3: 5, 4: 16}})
