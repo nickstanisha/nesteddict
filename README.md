@@ -43,33 +43,10 @@ defaultdict(<function <lambda> at 0x10077f840>, {1: defaultdict(<function <lambd
 ## Install
 Clone this repository and run `python setup.py develop` to install.
 
-## Uses
-
-One of the envisioned use-cases of this data structure is specifying
-[Elasticsearch queries](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-filter-context.html)
-as dicts.
-
+## Notes
+Tuples are automatically parsed into `NestedDict` paths when used with the `[]` operator. That means that there is no difference between `nesteddict[1, 2, 3] = 4` and `nesteddict[(1, 2, 3)] = 4`. In order to use tuples as keys, you must use one of the following approaches
 ```python
->>> from nesteddict import NestedDict
->>> import json
->>> query = NestedDict()
->>> query['query', 'bool', 'must', 'match', 'title'] = 'A book title'
->>> query['query', 'bool', 'filter', 'term', 'status'] = 'published'
->>> print(json.dumps(query, indent=4, sort_keys=True))
-{
-    "query": {
-        "bool": {
-            "filter": {
-                "term": {
-                    "status": "published"
-                }
-            },
-            "must": {
-                "match": {
-                    "title": "A book title"
-                }
-            }
-        }
-    }
-}
+>>> d[(1, 2, 3), ] = 4
+>>> d.set((1, 2, 3), 4)
 ```
+`NestedDict` has three public methods that act as short circuits to the underlying `__getitem__`, `__setitem__` and `__delitem__` methods of the base class `dict`: `nesteddict.set`, `nesteddict.get` and `nesteddict.delete`. Use those functions any time you want to be positive that you are using the standard `dict` behavior.
