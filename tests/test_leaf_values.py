@@ -21,7 +21,7 @@ class TestLeafValues:
         d = {1: {2: {3: {4: 5, 5: 'hello'}}}, 2: {(3, 2, 1): (1, 2, 3), 4: 16}}
         assert(set(leaf_values(d)) == set([5, 'hello', (1, 2, 3), 16]))
 
-        assert(set(leaf_values(NestedDict(d))) == {5, 'hello', (1, 2, 3), 16})
+        assert(set(leaf_values(NestedDict(d))) == set([5, 'hello', (1, 2, 3), 16]))
 
         d = NestedDict()
         d[1, 2, 3, 4] = 5
