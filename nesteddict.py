@@ -12,13 +12,13 @@ __all__ = ['NestedDict', 'leaf_values', 'nested_keys', 'to_nested_dict']
 
 
 def _dfs_generator(dictionary):
-    if not isinstance(dictionary, dict):
+    if not isinstance(dictionary, (dict, NestedDict)):
         raise TypeError("Unsupported type '{}'".format(type(dictionary).__name__))
 
     stack = [(val, [key]) for key, val in dictionary.items()]
     while stack:
         d, path = stack.pop()
-        if isinstance(d, dict):
+        if isinstance(d, (dict, NestedDict)):
             stack.extend([(val, path + [key]) for key, val in d.items()])
         else:
             yield d, tuple(path)
@@ -72,7 +72,7 @@ def leaf_values(dictionary):
     return [val for val, path in _dfs_generator(dictionary)]
 
 
-class NestedDict(dict):
+class NestedDict(object):
     """ An object representing a dictionary of dictionaries of dictionaries ...
 
         In order to avoid code like this
@@ -104,11 +104,12 @@ class NestedDict(dict):
         {1: {2: 3}}
     """
     def __init__(self, *args, **kwargs):
-        if args and isinstance(args[0], dict) and not isinstance(args[0], NestedDict):
+        self._dict = dict()
+        if args and isinstance(args[0], (dict, NestedDict)):
             for val, key in _dfs_generator(args[0]):
                 self[key] = val
         else:
-            super(NestedDict, self).__init__(*args, **kwargs)
+            self._dict = dict(*args, **kwargs)
 
     @staticmethod
     def _split_key(key):
@@ -120,29 +121,44 @@ class NestedDict(dict):
     def __getitem__(self, key):
         cur_key, downstream = self._split_key(key)
         if downstream:
-            return super(NestedDict, self).__getitem__(cur_key)[downstream]
+            return self._dict[cur_key][downstream]
         else:
-            return super(NestedDict, self).__getitem__(cur_key)
+            return self._dict[cur_key]
 
     def __setitem__(self, key, value):
         cur_key, downstream = self._split_key(key)
         if downstream:
-            if cur_key not in self or not isinstance(super(NestedDict, self).__getitem__(cur_key), NestedDict):
-                super(NestedDict, self).__setitem__(cur_key, NestedDict())
-            super(NestedDict, self).__getitem__(cur_key)[downstream] = value
+            if cur_key not in self._dict or not isinstance(self._dict[cur_key], NestedDict):
+                self._dict[cur_key] = NestedDict()
+            self._dict[cur_key][downstream] = value
         else:
-            if isinstance(value, dict) and not isinstance(value, NestedDict):
-                super(NestedDict, self).__setitem__(cur_key, NestedDict(value))
-            else:
-                super(NestedDict, self).__setitem__(cur_key, value)
+            self._dict[cur_key] = NestedDict(value) if isinstance(value, dict) else value
 
     def __delitem__(self, key):
         if isinstance(key, collections.Sequence) and not isinstance(key, basestring):
             upstream, cur_key = key[:-1], key[-1]
             d = self[upstream] if upstream else self
-            super(NestedDict, d).__delitem__(cur_key)
+            del d._dict[cur_key]
         else:
-            super(NestedDict, self).__delitem__(key)
+            del self._dict[key]
+
+    def __iter__(self):
+        return self._dict.__iter__()
+
+    def __contains__(self, item):
+        return self._dict.__contains__(item)
+
+    def __repr__(self):
+        return self._dict.__repr__()
+
+    def __str__(self):
+        return self._dict.__str__()
+
+    def __eq__(self, other):
+        return self._dict.__eq__(other)
+
+    def __ne__(self, other):
+        return self._dict.__ne__(other)
 
     def get_nested(self, key, default=None):
         """ Get a path from a `NestedDict` (analogous to `dict.get` except keys get analyzed as paths """
@@ -159,10 +175,7 @@ class NestedDict(dict):
             >>> v = d[(1, 2, 3),]  # will raise if the key (1, 2, 3) does not exist in d
             >>> v = d.get((1, 2, 3))  # will return `None` if the key (1, 2, 3) does not exist in d
         """
-        try:
-            return super(NestedDict, self).__getitem__(key)
-        except (KeyError, TypeError):
-            return default
+        return self._dict.get(key, default)
 
     def set(self, key, value):
         """ A short-circuit to `dict.__setitem__`, will not parse tuples into a path before applying changes
@@ -175,7 +188,7 @@ class NestedDict(dict):
             >>> d[[(1, 2, 3)]] = 4
             >>> d.set((1, 2, 3), 4)
         """
-        return super(NestedDict, self).__setitem__(key, value)
+        self._dict[key] = value
 
     def delete(self, key):
         """ A short-circuit to `dict.__delitem__`, will not parse tuples into a path before applying changes
@@ -187,7 +200,13 @@ class NestedDict(dict):
             >>> del d[(1, 2, 3),]
             >>> d.delete((1, 2, 3))
         """
-        return super(NestedDict, self).__delitem__(key)
+        del self._dict[key]
+
+    def items(self):
+        return self._dict.items()
+
+    def update(self, other):
+        return self._dict.update(other._dict if isinstance(other, NestedDict) else other)
 
     def leaf_values(self):
         """ Return the values at the bottom of a nested dict (Analogous to `dict.values`)
