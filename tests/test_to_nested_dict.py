@@ -20,4 +20,4 @@ class TestToNestedDict:
         assert(isinstance(d[1, 2, 3], NestedDict))
         assert(isinstance(d[2], NestedDict))
         assert(all(hasattr(d, att) for att in
-                   ['get_nested', 'nested_update', 'leaf_values', 'nested_keys', 'set', 'delete']))
+                   ['nested_update', 'leaf_values', 'paths', 'set', 'delete']))

@@ -21,7 +21,7 @@ def _dfs_generator(dictionary):
         if isinstance(d, dict):
             stack.extend([(val, path + [key]) for key, val in d.items()])
         else:
-            yield d, tuple(path)
+            yield tuple(path), d
 
 
 def to_nested_dict(dictionary):
@@ -33,12 +33,12 @@ def to_nested_dict(dictionary):
             The contents of the original `dict`, in a `NestedDict` object
     """
     d = NestedDict()
-    for val, key in _dfs_generator(dictionary):
-        d[key] = val
+    for path, val in _dfs_generator(dictionary):
+        d[path] = val
     return d
 
 
-def nested_keys(dictionary):
+def paths(dictionary):
     """ Return tuples representing paths to the bottom of a dict
 
         Returns
@@ -52,7 +52,7 @@ def nested_keys(dictionary):
         >>> print(nested_keys(d))
         [(2, 3, 4), (1, 2, 4), (1, 2, 3)]
     """
-    return [path for val, path in _dfs_generator(dictionary)]
+    return [path for path, _ in _dfs_generator(dictionary)]
 
 
 def leaf_values(dictionary):
@@ -69,7 +69,7 @@ def leaf_values(dictionary):
         >>> print(leaf_values(d))
         [5, 5, 4]
     """
-    return [val for val, path in _dfs_generator(dictionary)]
+    return [val for _, val in _dfs_generator(dictionary)]
 
 
 class NestedDict(dict):
@@ -105,8 +105,8 @@ class NestedDict(dict):
     """
     def __init__(self, *args, **kwargs):
         if args and isinstance(args[0], dict) and not isinstance(args[0], NestedDict):
-            for val, key in _dfs_generator(args[0]):
-                self[key] = val
+            for path, val in _dfs_generator(args[0]):
+                self[path] = val
         else:
             super(NestedDict, self).__init__(*args, **kwargs)
 
@@ -144,13 +144,6 @@ class NestedDict(dict):
         else:
             super(NestedDict, self).__delitem__(key)
 
-    def get_nested(self, key, default=None):
-        """ Get a path from a `NestedDict` (analogous to `dict.get` except keys get analyzed as paths """
-        try:
-            return self[key]
-        except (KeyError, TypeError):
-            return default
-
     def get(self, key, default=None):
         """ A short-circuit to `dict.get`, will not parse tuples into a path before applying changes
 
@@ -161,7 +154,7 @@ class NestedDict(dict):
         """
         try:
             return super(NestedDict, self).__getitem__(key)
-        except (KeyError, TypeError):
+        except KeyError:
             return default
 
     def set(self, key, value):
@@ -197,9 +190,9 @@ class NestedDict(dict):
             out : list
                 A list of leaf values retrieved in depth-first order from the NestedDict
         """
-        return [val for val, path in _dfs_generator(self)]
+        return [val for _, val in _dfs_generator(self)]
 
-    def nested_keys(self):
+    def paths(self):
         """ Return tuples representing paths to the bottom of a nested dict (Analogous to `dict.keys`)
 
             Returns
@@ -207,7 +200,7 @@ class NestedDict(dict):
             out : list[tuple]
                 A list of tuples representing paths retrieved in depth-first order from the NestedDict
         """
-        return [path for val, path in _dfs_generator(self)]
+        return [path for path, _ in _dfs_generator(self)]
 
     def nested_update(self, obj):
         """ Works like `dict.update` except only the leaf values of the supplied dictionary are
@@ -223,5 +216,5 @@ class NestedDict(dict):
             >>> print(d)
             {1: {2: {3: {4: 5, 5: 7}}}, 2: {3: 5, 4: 16, 5: 1}}
         """
-        for val, path in _dfs_generator(obj):
+        for path, val in _dfs_generator(obj):
             self[path] = val
