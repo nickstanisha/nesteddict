@@ -19,6 +19,10 @@ class TestNestedDict:
         d = NestedDict([(1, 2), (3, {4: 5})])
         assert(isinstance(d[3], NestedDict))
 
+    def test_dict_coverage(self):
+        nested_pubs = set(i for i in dir(NestedDict()) if not i.startswith('_'))
+        assert all(i in nested_pubs for i in dir(dict()) if not i.startswith('_'))
+
     def test_dict_init(self):
         d = NestedDict({1: {2: {3: {4: {5: 6}}}}})
         assert(d[1, 2, 3, 4, 5] == 6)

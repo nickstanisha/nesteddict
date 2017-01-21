@@ -171,6 +171,30 @@ class NestedDict(collections.MutableMapping):
     def __len__(self):
         return len(self._dict)
 
+    def copy(self):
+        """ Analogous to `dict.copy`, returns a new NestedDict matching `self`. Since
+            NestedDicts are deep by nature, this functions as a "deepcopy"
+        """
+        return NestedDict(self)
+
+    def delete(self, key):
+        """ A short-circuit to `dict.__delitem__`, will not parse tuples into a path before applying changes
+
+            Examples
+            --------
+            >>> # The following are equivalent
+            >>> d = NestedDict()
+            >>> del d[(1, 2, 3),]
+            >>> d.delete((1, 2, 3))
+        """
+        del self._dict[key]
+
+    @classmethod
+    def fromkeys(cls, seq, value=None):
+        """ Create a new NestedDict with keys from `seq` and values set to `value` """
+        value = NestedDict(value) if isinstance(value, dict) else value
+        return NestedDict([(k, value) for k in seq])
+
     def get_path(self, path, default=None):
         """ Get a path from a `NestedDict` (analogous to `dict.get` except keys get analyzed as paths """
         try:
@@ -188,36 +212,8 @@ class NestedDict(collections.MutableMapping):
         """
         return self._dict.get(key, default)
 
-    def set(self, key, value):
-        """ A short-circuit to `dict.__setitem__`, will not parse tuples into a path before applying changes
-
-            Examples
-            --------
-            >>> # The following are equivalent
-            >>> d = NestedDict()
-            >>> d[(1, 2, 3),] = 4
-            >>> d[[(1, 2, 3)]] = 4
-            >>> d.set((1, 2, 3), 4)
-        """
-        self._dict[key] = value
-
-    def delete(self, key):
-        """ A short-circuit to `dict.__delitem__`, will not parse tuples into a path before applying changes
-
-            Examples
-            --------
-            >>> # The following are equivalent
-            >>> d = NestedDict()
-            >>> del d[(1, 2, 3),]
-            >>> d.delete((1, 2, 3))
-        """
-        del self._dict[key]
-
     def items(self):
         return self._dict.items()
-
-    def update(self, other):
-        return self._dict.update(other._dict if isinstance(other, NestedDict) else other)
 
     def leaf_values(self):
         """ Return the values at the bottom of a nested dict (Analogous to `dict.values`)
@@ -238,6 +234,19 @@ class NestedDict(collections.MutableMapping):
                 A list of tuples representing paths retrieved in depth-first order from the NestedDict
         """
         return [path for val, path in _dfs_generator(self)]
+
+    def set(self, key, value):
+        """ A short-circuit to `dict.__setitem__`, will not parse tuples into a path before applying changes
+
+            Examples
+            --------
+            >>> # The following are equivalent
+            >>> d = NestedDict()
+            >>> d[(1, 2, 3),] = 4
+            >>> d[[(1, 2, 3)]] = 4
+            >>> d.set((1, 2, 3), 4)
+        """
+        self._dict[key] = value
 
     def update(self, obj):
         """ Works like `dict.update` except only the leaf values of the supplied dictionary are
