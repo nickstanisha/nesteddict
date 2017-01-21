@@ -16,6 +16,9 @@ class TestNestedDict:
         d = NestedDict([(1, 2), (3, 4), ('hello', 'goodbye')])
         assert(d == {1: 2, 3: 4, 'hello': 'goodbye'})
 
+        d = NestedDict([(1, 2), (3, {4: 5})])
+        assert(isinstance(d[3], NestedDict))
+
     def test_dict_init(self):
         d = NestedDict({1: {2: {3: {4: {5: 6}}}}})
         assert(d[1, 2, 3, 4, 5] == 6)
