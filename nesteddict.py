@@ -8,7 +8,7 @@ except NameError:
 
 __author__ = "Nick Stanisha <github.com/nickstanisha>"
 __version__ = "0.1"
-__all__ = ['NestedDict', 'leaf_values', 'nested_keys', 'to_nested_dict']
+__all__ = ['NestedDict', 'leaf_values', 'paths', 'to_nested_dict']
 
 
 def _dfs_generator(dictionary):
@@ -38,7 +38,7 @@ def to_nested_dict(dictionary):
     return d
 
 
-def nested_keys(dictionary):
+def paths(dictionary):
     """ Return tuples representing paths to the bottom of a dict
 
         Returns
@@ -49,7 +49,7 @@ def nested_keys(dictionary):
         Examples
         --------
         >>> d = {1: {2: {3: 4, 4: 5}}, 2: {3: {4: 5}}}
-        >>> print(nested_keys(d))
+        >>> print(paths(d))
         [(2, 3, 4), (1, 2, 4), (1, 2, 3)]
     """
     return [path for val, path in _dfs_generator(dictionary)]
@@ -72,7 +72,7 @@ def leaf_values(dictionary):
     return [val for val, path in _dfs_generator(dictionary)]
 
 
-class NestedDict(object):
+class NestedDict(collections.MutableMapping):
     """ An object representing a dictionary of dictionaries of dictionaries ...
 
         In order to avoid code like this
@@ -109,24 +109,28 @@ class NestedDict(object):
             for val, key in _dfs_generator(args[0]):
                 self[key] = val
         else:
-            self._dict = dict(*args, **kwargs)
+            # Args must be a single argument -- an iterable of pairs.
+            if args:
+                args = [(x, NestedDict(y) if isinstance(y, dict) else y) for (x, y) in args[0]]
+            kwargs = {k: NestedDict(v) if isinstance(v, dict) else v for k, v in kwargs.items()}
+            self._dict = dict(args, **kwargs)
 
     @staticmethod
-    def _split_key(key):
+    def _split_path(key):
         if isinstance(key, collections.Sequence) and not isinstance(key, basestring):
             return key[0], key[1:]
         else:
             return key, []
 
-    def __getitem__(self, key):
-        cur_key, downstream = self._split_key(key)
+    def __getitem__(self, path):
+        cur_key, downstream = self._split_path(path)
         if downstream:
             return self._dict[cur_key][downstream]
         else:
             return self._dict[cur_key]
 
-    def __setitem__(self, key, value):
-        cur_key, downstream = self._split_key(key)
+    def __setitem__(self, path, value):
+        cur_key, downstream = self._split_path(path)
         if downstream:
             if cur_key not in self._dict or not isinstance(self._dict[cur_key], NestedDict):
                 self._dict[cur_key] = NestedDict()
@@ -134,19 +138,23 @@ class NestedDict(object):
         else:
             self._dict[cur_key] = NestedDict(value) if isinstance(value, dict) else value
 
-    def __delitem__(self, key):
-        if isinstance(key, collections.Sequence) and not isinstance(key, basestring):
-            upstream, cur_key = key[:-1], key[-1]
+    def __delitem__(self, path):
+        if isinstance(path, collections.Sequence) and not isinstance(path, basestring):
+            upstream, cur_key = path[:-1], path[-1]
             d = self[upstream] if upstream else self
             del d._dict[cur_key]
         else:
-            del self._dict[key]
+            del self._dict[path]
 
     def __iter__(self):
-        return self._dict.__iter__()
+        return iter(self._dict)
 
-    def __contains__(self, item):
-        return self._dict.__contains__(item)
+    def __contains__(self, path):
+        try:
+            self.__getitem__(path)
+            return True
+        except (KeyError, TypeError):
+            return False
 
     def __repr__(self):
         return self._dict.__repr__()
@@ -160,10 +168,13 @@ class NestedDict(object):
     def __ne__(self, other):
         return self._dict.__ne__(other)
 
-    def get_nested(self, key, default=None):
+    def __len__(self):
+        return len(self._dict)
+
+    def get_path(self, path, default=None):
         """ Get a path from a `NestedDict` (analogous to `dict.get` except keys get analyzed as paths """
         try:
-            return self[key]
+            return self[path]
         except (KeyError, TypeError):
             return default
 
@@ -218,7 +229,7 @@ class NestedDict(object):
         """
         return [val for val, path in _dfs_generator(self)]
 
-    def nested_keys(self):
+    def paths(self):
         """ Return tuples representing paths to the bottom of a nested dict (Analogous to `dict.keys`)
 
             Returns
@@ -228,7 +239,7 @@ class NestedDict(object):
         """
         return [path for val, path in _dfs_generator(self)]
 
-    def nested_update(self, obj):
+    def update(self, obj):
         """ Works like `dict.update` except only the leaf values of the supplied dictionary are
             used to update `self`
 
@@ -238,7 +249,7 @@ class NestedDict(object):
             {1: {2: {3: {4: 5, 5: 6}}}, 2: {3: 5, 4: 16}}
             >>> print(e)
             {1: {2: {3: {5: 7}}}, 2: {5: 1}}
-            >>> d.nested_update(e)
+            >>> d.update(e)
             >>> print(d)
             {1: {2: {3: {4: 5, 5: 7}}}, 2: {3: 5, 4: 16, 5: 1}}
         """

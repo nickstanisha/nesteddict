@@ -51,7 +51,7 @@ class TestNestedDict:
         item = d.get((1, 2, 3))
         assert(d == {})
 
-        item = d.get_nested((1, 2, 3))
+        item = d.get_path((1, 2, 3))
         assert(d == {})
 
     def test_nonempty_no_unintentional_set(self):
@@ -62,7 +62,7 @@ class TestNestedDict:
         assert(d == {1: {2: {3: 'hello', 4: 'goodbye'}}})
         item = d.get((1, 2, 5, 6))
         assert(d == {1: {2: {3: 'hello', 4: 'goodbye'}}})
-        item = d.get_nested((1, 2, 5))
+        item = d.get_path((1, 2, 5))
         assert(d == {1: {2: {3: 'hello', 4: 'goodbye'}}})
 
     def test_shallow_setter(self):
@@ -99,9 +99,9 @@ class TestNestedDict:
     def test_nested_get(self):
         d = NestedDict()
         d[1, 2, 3] = 4
-        assert(d.get_nested([1, 3]) is None)
-        assert(d.get_nested([1, 3], 'arbitrary') == 'arbitrary')
-        assert(d.get_nested([1, 2, 3]) == 4)
+        assert(d.get_path([1, 3]) is None)
+        assert(d.get_path([1, 3], 'arbitrary') == 'arbitrary')
+        assert(d.get_path([1, 2, 3]) == 4)
 
     def test_get_errors(self):
         d = NestedDict()
@@ -157,35 +157,35 @@ class TestNestedDict:
         d[2, 4] = 16
         assert (set(d.leaf_values()) == {5, 'hello', (1, 2, 3), 16})
 
-    def test_nested_keys(self):
+    def test_paths(self):
         d = NestedDict()
         d[1] = 4
         d['hello'] = (3, 2, 1)
         d[(1, 2, 3), ] = 'hello'
-        assert (set(d.nested_keys()) == {(1,), ('hello',), ((1, 2, 3),)})
+        assert (set(d.paths()) == {(1,), ('hello',), ((1, 2, 3),)})
 
         d = NestedDict()
         d[1, 2, 3, 4] = 5
         d[1, 2, 3, 5] = 'hello'
         d[2, (3, 2, 1)] = (1, 2, 3)
         d[2, 4] = 16
-        assert (set(d.nested_keys()) == {(1, 2, 3, 4), (1, 2, 3, 5), (2, (3, 2, 1)), (2, 4)})
+        assert (set(d.paths()) == {(1, 2, 3, 4), (1, 2, 3, 5), (2, (3, 2, 1)), (2, 4)})
 
-    def test_nested_update(self):
+    def test_update(self):
         d = NestedDict({1: {2: {3: {4: 5, 5: 6}}}, 2: {3: 5, 4: 16}})
         e = {1: {2: {3: {5: 7}}}, 2: {5: 1}}
-        d.nested_update(e)
+        d.update(e)
         assert(d == {1: {2: {3: {4: 5, 5: 7}}}, 2: {3: 5, 4: 16, 5: 1}})
 
         d = NestedDict({1: {2: {3: {4: 5, 5: 6}}}, 2: {3: 5, 4: 16}})
         e = NestedDict({1: {2: {3: {5: 7}}}, 2: {5: 1}})
-        d.nested_update(e)
+        d.update(e)
         assert(d == {1: {2: {3: {4: 5, 5: 7}}}, 2: {3: 5, 4: 16, 5: 1}})
 
-    def test_nested_update_complex_keys(self):
+    def test_update_complex_keys(self):
         d = NestedDict({(1, 2, 3): {(4, 3, 2): 1, 'hello': 'goodbye'}, 'a': {('a', 'b', 'c'): 2}})
         e = {1: 2, (1, 2, 3): 4, 'hello': {'good': 'bye', 'bon': 'voyage'}}
-        d.nested_update(e)
+        d.update(e)
 
         assert(d == {1: 2, (1, 2, 3): 4, 'hello': {'good': 'bye', 'bon': 'voyage'}, 'a': {('a', 'b', 'c'): 2}})
 
