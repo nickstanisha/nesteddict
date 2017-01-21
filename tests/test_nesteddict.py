@@ -21,7 +21,7 @@ class TestNestedDict:
 
     def test_dict_coverage(self):
         nested_pubs = set(i for i in dir(NestedDict()) if not i.startswith('_'))
-        assert all([i in nested_pubs for i in dir(dict()) if not i.startswith('_')])
+        assert all([i in nested_pubs for i in dir(dict()) if not i.startswith('_') and not i.startswith('iter')])
 
     def test_dict_init(self):
         d = NestedDict({1: {2: {3: {4: {5: 6}}}}})
