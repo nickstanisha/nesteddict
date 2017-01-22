@@ -137,8 +137,6 @@ class TestNestedDict:
     def test_copy(self):
         d = NestedDict({(1, 2, 3): {(4, 3, 2): 1, 'hello': 'goodbye'}, 'a': {('a', 'b', 'c'): 2}})
         e = d.copy()
-        print(type(d))
-        print(type(e))
         assert(d == e)
         assert(id(d) != id(e))
 
