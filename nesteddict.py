@@ -260,7 +260,7 @@ class NestedDict(collections.MutableMapping):
         """ Returns a dictionary from a NestedDict object """
         return dict((k, v.to_dict() if isinstance(v, NestedDict) else v) for k, v in self.items())
 
-    def update(self, obj):
+    def deep_update(self, obj):
         """ Works like `dict.update` except only the leaf values of the supplied dictionary are
             used to update `self`
 
@@ -270,7 +270,7 @@ class NestedDict(collections.MutableMapping):
             {1: {2: {3: {4: 5, 5: 6}}}, 2: {3: 5, 4: 16}}
             >>> print(e)
             {1: {2: {3: {5: 7}}}, 2: {5: 1}}
-            >>> d.update(e)
+            >>> d.deep_update(e)
             >>> print(d)
             {1: {2: {3: {4: 5, 5: 7}}}, 2: {3: 5, 4: 16, 5: 1}}
         """

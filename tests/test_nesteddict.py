@@ -21,8 +21,9 @@ class TestNestedDict:
 
     def test_dict_coverage(self):
         nested_pubs = set(i for i in dir(NestedDict()) if not i.startswith('_'))
-        assert all([i in nested_pubs for i in dir(dict())
-                    if not i.startswith('_') and not i.startswith('view') and i != 'has_key'])
+        for i in dir(dict()):
+            if not i.startswith('_') and not i.startswith('view') and i != 'has_key':
+                assert(i in nested_pubs), "Missing dict() attribute: {}".format(i)
 
     def test_dict_init(self):
         d = NestedDict({1: {2: {3: {4: {5: 6}}}}})
@@ -226,20 +227,20 @@ class TestNestedDict:
         assert(isinstance(e[(2, 3)], int))
         assert(isinstance(e[1][(2, 3)], dict))
 
-    def test_update(self):
+    def test_deep_update(self):
         d = NestedDict({1: {2: {3: {4: 5, 5: 6}}}, 2: {3: 5, 4: 16}})
         e = {1: {2: {3: {5: 7}}}, 2: {5: 1}}
-        d.update(e)
+        d.deep_update(e)
         assert(d == {1: {2: {3: {4: 5, 5: 7}}}, 2: {3: 5, 4: 16, 5: 1}})
 
         d = NestedDict({1: {2: {3: {4: 5, 5: 6}}}, 2: {3: 5, 4: 16}})
         e = NestedDict({1: {2: {3: {5: 7}}}, 2: {5: 1}})
-        d.update(e)
+        d.deep_update(e)
         assert(d == {1: {2: {3: {4: 5, 5: 7}}}, 2: {3: 5, 4: 16, 5: 1}})
 
-    def test_update_complex_keys(self):
+    def test_deep_update_complex_keys(self):
         d = NestedDict({(1, 2, 3): {(4, 3, 2): 1, 'hello': 'goodbye'}, 'a': {('a', 'b', 'c'): 2}})
         e = {1: 2, (1, 2, 3): 4, 'hello': {'good': 'bye', 'bon': 'voyage'}}
-        d.update(e)
+        d.deep_update(e)
 
         assert(d == {1: 2, (1, 2, 3): 4, 'hello': {'good': 'bye', 'bon': 'voyage'}, 'a': {('a', 'b', 'c'): 2}})
