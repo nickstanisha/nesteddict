@@ -123,18 +123,6 @@ class TestNestedDict:
         with pytest.raises(TypeError, message="Expecting TypeError"):
             val = d['a', 'b', 'c', 'd']
 
-    def test_update(self):
-        """ This maintains `dict`s functionality, only merging the
-            top-level keys.
-        """
-        d, e, = NestedDict(), NestedDict()
-        d[1, 2, 3] = [1, 2]
-        d[2, 'k'] = 16
-        e[1, 2, 4] = [3, 4]
-        e[3] = 'hello'
-        d.update(e)
-        assert(d == {1: {2: {4: [3, 4]}}, 2: {'k': 16}, 3: 'hello'})
-
     def test_set(self):
         d = NestedDict()
         d.set((1, 2, 3), 4)
@@ -145,10 +133,57 @@ class TestNestedDict:
         with pytest.raises(KeyError, message="Unintentional assignment in `set`"):
             item = d[1, 2, 3]
 
+    def test_copy(self):
+        d = NestedDict({(1, 2, 3): {(4, 3, 2): 1, 'hello': 'goodbye'}, 'a': {('a', 'b', 'c'): 2}})
+        e = d.copy()
+        print(type(d))
+        print(type(e))
+        assert(d == e)
+        assert(id(d) != id(e))
+
+    def test_copy_deep(self):
+        d = NestedDict({(1, 2, 3): {(4, 3, 2): 1, 'hello': 'goodbye'}, 'a': {('a', 'b', 'c'): 2}})
+        e = d.copy()
+        d['a', ('a', 'b', 'c')] += 1
+        assert(d['a', ('a', 'b', 'c')] != e['a', ('a', 'b', 'c')])
+
     def test_delete(self):
         d = NestedDict({(1, 2, 3): 4, 1: {2: {3: 4}}})
         d.delete((1, 2, 3))
         assert(d == {1: {2: {3: 4}}})
+
+    def test_del(self):
+        d = NestedDict({(1, 2, 3): {(4, 3, 2): 1, 'hello': 'goodbye'}, 'a': {('a', 'b', 'c'): 2}})
+        del d[(1, 2, 3), 'hello']
+        assert (d == {(1, 2, 3): {(4, 3, 2): 1}, 'a': {('a', 'b', 'c'): 2}})
+
+        del d['a']
+        assert (d == {(1, 2, 3): {(4, 3, 2): 1}})
+
+        with pytest.raises(KeyError, message="Expected KeyError"):
+            del d[1, 2, 3]
+            assert (d == {(1, 2, 3): {(4, 3, 2): 1}})
+
+    def test_fromkeys(self):
+        d = NestedDict.fromkeys([1, 2, (3, 4)])
+        assert(d == {1: None, 2: None, (3, 4): None})
+
+        d = NestedDict.fromkeys([1, (2, 3), 4], {'a': 1})
+        assert(d == {1: {'a': 1}, (2, 3): {'a': 1}, 4: {'a': 1}})
+        assert(all(isinstance(d[k], NestedDict) for k in d))
+
+    def test_fromkeys_complex_dict(self):
+        d = NestedDict.fromkeys([1, (2, 3)], {('a', 'b'): 'c'})
+        assert(d == {1: {('a', 'b'): 'c'}, (2, 3): {('a', 'b'): 'c'}})
+
+    def test_item_key_value_consistency(self):
+        d = NestedDict({(1, 2, 3): {(4, 3, 2): 1, 'hello': 'goodbye'}, 'a': {('a', 'b', 'c'): 2}})
+        assert(list(d.items()) == list(zip(d.keys(), d.values())))
+
+    def test_iter_contains_consistency(self):
+        d = NestedDict({(1, 2, 3): {(4, 3, 2): 1, 'hello': 'goodbye'}, 'a': {('a', 'b', 'c'): 2}})
+        for path in d:
+            assert(path in d)
 
     def test_leaf_values(self):
         d = NestedDict()
@@ -179,6 +214,18 @@ class TestNestedDict:
         d[2, 4] = 16
         assert (set(d.paths()) == {(1, 2, 3, 4), (1, 2, 3, 5), (2, (3, 2, 1)), (2, 4)})
 
+    def test_to_dict(self):
+        d = NestedDict()
+        d[1, (2, 3), 4] = 5
+        d[(2, 3), ] = 4
+        e = d.to_dict()
+
+        assert(d == e)
+        assert(isinstance(e, dict))
+        assert(isinstance(e[1], dict))
+        assert(isinstance(e[(2, 3)], int))
+        assert(isinstance(e[1][(2, 3)], dict))
+
     def test_update(self):
         d = NestedDict({1: {2: {3: {4: 5, 5: 6}}}, 2: {3: 5, 4: 16}})
         e = {1: {2: {3: {5: 7}}}, 2: {5: 1}}
@@ -196,15 +243,3 @@ class TestNestedDict:
         d.update(e)
 
         assert(d == {1: 2, (1, 2, 3): 4, 'hello': {'good': 'bye', 'bon': 'voyage'}, 'a': {('a', 'b', 'c'): 2}})
-
-    def test_del(self):
-        d = NestedDict({(1, 2, 3): {(4, 3, 2): 1, 'hello': 'goodbye'}, 'a': {('a', 'b', 'c'): 2}})
-        del d[(1, 2, 3), 'hello']
-        assert(d == {(1, 2, 3): {(4, 3, 2): 1}, 'a': {('a', 'b', 'c'): 2}})
-
-        del d['a']
-        assert(d == {(1, 2, 3): {(4, 3, 2): 1}})
-
-        with pytest.raises(KeyError, message="Expected KeyError"):
-            del d[1, 2, 3]
-            assert (d == {(1, 2, 3): {(4, 3, 2): 1}})

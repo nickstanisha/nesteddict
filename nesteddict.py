@@ -147,7 +147,9 @@ class NestedDict(collections.MutableMapping):
             del self._dict[path]
 
     def __iter__(self):
-        return iter(self._dict)
+        for i in self._dict:
+            yield (i, )
+        # return iter(self._dict)
 
     def __contains__(self, path):
         try:
@@ -163,10 +165,13 @@ class NestedDict(collections.MutableMapping):
         return self._dict.__str__()
 
     def __eq__(self, other):
-        return self._dict.__eq__(other)
+        if isinstance(other, NestedDict):
+            return self._dict.__eq__(other._dict)
+        else:
+            return self._dict.__eq__(other)
 
     def __ne__(self, other):
-        return self._dict.__ne__(other)
+        return not self.__eq__(other)
 
     def __len__(self):
         return len(self._dict)
@@ -212,6 +217,9 @@ class NestedDict(collections.MutableMapping):
         """
         return self._dict.get(key, default)
 
+    def keys(self):
+        return self._dict.keys()
+
     def items(self):
         return self._dict.items()
 
@@ -247,6 +255,10 @@ class NestedDict(collections.MutableMapping):
             >>> d.set((1, 2, 3), 4)
         """
         self._dict[key] = value
+
+    def to_dict(self):
+        """ Returns a dictionary from a NestedDict object """
+        return dict((k, v.to_dict() if isinstance(v, NestedDict) else v) for k, v in self.items())
 
     def update(self, obj):
         """ Works like `dict.update` except only the leaf values of the supplied dictionary are
