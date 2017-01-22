@@ -170,9 +170,6 @@ class NestedDict(collections.MutableMapping):
         else:
             return self._dict.__eq__(other)
 
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
     def __len__(self):
         return len(self._dict)
 

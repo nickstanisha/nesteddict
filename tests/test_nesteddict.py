@@ -134,6 +134,13 @@ class TestNestedDict:
         with pytest.raises(KeyError, message="Unintentional assignment in `set`"):
             item = d[1, 2, 3]
 
+    def test_contains(self):
+        d = NestedDict({(1, 2, 3): {(4, 3, 2): 1, 'hello': 'goodbye'}, 'a': {('a', 'b', 'c'): 2}})
+        assert('a' in d)
+        assert(((1, 2, 3), ) in d)
+        assert(((1, 2, 3), (4, 3, 2)) in d)
+        assert('b' not in d)
+
     def test_copy(self):
         d = NestedDict({(1, 2, 3): {(4, 3, 2): 1, 'hello': 'goodbye'}, 'a': {('a', 'b', 'c'): 2}})
         e = d.copy()
@@ -161,7 +168,6 @@ class TestNestedDict:
 
         with pytest.raises(KeyError, message="Expected KeyError"):
             del d[1, 2, 3]
-            assert (d == {(1, 2, 3): {(4, 3, 2): 1}})
 
     def test_fromkeys(self):
         d = NestedDict.fromkeys([1, 2, (3, 4)])
@@ -199,6 +205,16 @@ class TestNestedDict:
         d[2, 4] = 16
         assert (set(d.leaf_values()) == {5, 'hello', (1, 2, 3), 16})
 
+    def test_len(self):
+        d = NestedDict()
+        d[1, 2, 3, 4] = 5
+        d[(1, 2), 3, 5] = 'hello'
+        d[2, (3, 2, 1)] = (1, 2, 3)
+        d[2, 4] = 16
+        assert(len(d) == len(d._dict))
+        assert(len(d) == len(d.to_dict()))
+        assert(len(d) == 3)
+
     def test_paths(self):
         d = NestedDict()
         d[1] = 4
@@ -212,6 +228,24 @@ class TestNestedDict:
         d[2, (3, 2, 1)] = (1, 2, 3)
         d[2, 4] = 16
         assert (set(d.paths()) == {(1, 2, 3, 4), (1, 2, 3, 5), (2, (3, 2, 1)), (2, 4)})
+
+    def test_repr(self):
+        d = NestedDict()
+        d[1] = 4
+        d['hello'] = (3, 2, 1)
+        d[(1, 2, 3), (4, 5)] = 6
+        assert (eval(d.__repr__()) == eval(d._dict.__repr__()))
+        assert (eval(d.__repr__()) == eval(d.to_dict().__repr__()))
+        assert (eval(d.__repr__()) == eval({1: 4, 'hello': (3, 2, 1), (1, 2, 3): {(4, 5): 6}}.__repr__()))
+
+    def test_str(self):
+        d = NestedDict()
+        d[1] = 4
+        d['hello'] = (3, 2, 1)
+        d[(1, 2, 3), (4, 5)] = 6
+        assert (eval(str(d)) == eval(str(d._dict)))
+        assert (eval(str(d)) == eval(str(d.to_dict())))
+        assert (eval(str(d)) == eval(str({1: 4, 'hello': (3, 2, 1), (1, 2, 3): {(4, 5): 6}})))
 
     def test_to_dict(self):
         d = NestedDict()
